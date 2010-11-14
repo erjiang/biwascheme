@@ -9,10 +9,40 @@ BiwaScheme.Pair = Class.create({
     this.cdr = cdr;
   },
 
+// According to TSPL3, these are defined for
+// up to 4 cars and cdrs.
+
   caar: function(){ return this.car.car; },
   cadr: function(){ return this.cdr.car; },
   cdar: function(){ return this.cdr.car; },
   cddr: function(){ return this.cdr.cdr; },
+
+  caaar: function(){ return this.car.car.car; },
+  caadr: function(){ return this.cdr.car.car; },
+  cadar: function(){ return this.car.cdr.car; },
+  cdaar: function(){ return this.car.car.cdr; },
+  caddr: function(){ return this.cdr.cdr.car; },
+  cdadr: function(){ return this.cdr.car.cdr; },
+  cddar: function(){ return this.car.cdr.cdr; },
+  cdddr: function(){ return this.cdr.cdr.cdr; },
+
+  caaaar: function(){ return this.car.car.car.car; },
+  caaadr: function(){ return this.cdr.car.car.car; },
+  caadar: function(){ return this.car.cdr.car.car; },
+  cadaar: function(){ return this.car.car.cdr.car; },
+  caaddr: function(){ return this.cdr.cdr.car.car; },
+  cadadr: function(){ return this.cdr.car.cdr.car; },
+  caddar: function(){ return this.car.cdr.cdr.car; },
+  cadddr: function(){ return this.cdr.cdr.cdr.car; },
+
+  cdaaar: function(){ return this.cdr.car.car.cdr; },
+  cdaadr: function(){ return this.cdr.car.car.cdr; },
+  cdadar: function(){ return this.car.cdr.car.cdr; },
+  cddaar: function(){ return this.car.car.cdr.cdr; },
+  cdaddr: function(){ return this.cdr.cdr.car.cdr; },
+  cddadr: function(){ return this.cdr.car.cdr.cdr; },
+  cdddar: function(){ return this.car.cdr.cdr.cdr; },
+  cddddr: function(){ return this.cdr.cdr.cdr.cdr; },
 
   first:  function(){ return this.car; },
   second: function(){ return this.cdr.car; },
