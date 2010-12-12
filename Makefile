@@ -69,7 +69,7 @@ CONSOLE_FILES   =  $(VERSION_FILE) $(CONSOLE_FILES0)
 
 all: build
 
-build: lib/biwascheme.js lib/console_biwascheme.js
+build: lib/console_biwascheme.js
 
 $(VERSION_FILE): $(VERSION_FILE_IN) $(FILES0) $(CONSOLE_FILES0) Makefile
 	cat $< | sed -e "s/@GIT_COMMIT@/`git log -1 --pretty=format:%H`/" | sed -e "s/@VERSION@/`cat VERSION`/" > $@
@@ -77,11 +77,12 @@ $(VERSION_FILE): $(VERSION_FILE_IN) $(FILES0) $(CONSOLE_FILES0) Makefile
 lib/biwascheme.js: $(FILES) Makefile
 	cat $(FILES) > __merged.js
 	yuicomp __merged.js -o $@
-	rm __merged.js
+	#rm __merged.js
 	@echo "Wrote " $@
 
 lib/console_biwascheme.js: $(CONSOLE_FILES) Makefile
 	cat $(CONSOLE_FILES) > __merged.js
-	yuicomp __merged.js -o $@
-	rm __merged.js
+	#yuicomp __merged.js -o $@
+	#rm __merged.js
+	mv __merged.js $@
 	@echo "Wrote " $@

@@ -4,16 +4,11 @@
 with(BiwaScheme) {
 
 BiwaScheme.Dumper = Class.create({
-  initialize: function(dumparea){
-    this.dumparea = dumparea || $("dumparea") || null;;
+  initialize: function(){
     this.reset();
   },
 
   reset: function(){
-    if(this.dumparea){
-      // Note: this is for repl.html (needs refactoring..)
-      $(this.dumparea).update("");
-    }
     this.n_folds = 0;
     this.closures = [];
     this.n_dumps = 0;
@@ -180,7 +175,6 @@ BiwaScheme.Dumper = Class.create({
     }
     dumpitem.id = "dump" + this.n_dumps;
     dumpitem.innerHTML = s;
-    this.dumparea.appendChild(dumpitem);
     (function(n){
       $("dump_"+this.n_dumps+"_header").observe("click", function(){
         this.dump_move_to(n);

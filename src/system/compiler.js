@@ -26,6 +26,86 @@ BiwaScheme.Compiler = Class.create({
     return opc;
   },
 
+  // expand macro forms (recursively)
+  expand: function(x, flag){
+    flag || (flag = {})
+    var ret = null;
+    if(x instanceof BiwaScheme.Symbol){
+      ret = x;
+    }
+    else if(x instanceof BiwaScheme.Pair){
+      switch(x.car){
+      case BiwaScheme.Sym("define"):
+        var left = x.cdr.car, exp = x.cdr.cdr;
+        ret = new BiwaScheme.Pair(BiwaScheme.Sym("define"),
+                new BiwaScheme.Pair(left, this.expand(exp, flag)));
+        break;
+      case BiwaScheme.Sym("begin"):
+        ret = new BiwaScheme.Pair(BiwaScheme.Sym("begin"), this.expand(x.cdr, flag));
+        break;
+      case BiwaScheme.Sym("quote"):
+        ret = x;
+        break;
+      case BiwaScheme.Sym("lambda"):
+        var vars=x.cdr.car, body=x.cdr.cdr;
+        ret = new BiwaScheme.Pair(BiwaScheme.Sym("lambda"),
+                new BiwaScheme.Pair(vars, this.expand(body, flag)));
+        break;
+      case BiwaScheme.Sym("if"):
+        var testc=x.second(), thenc=x.third(), elsec=x.fourth();
+        if (elsec == BiwaScheme.inner_of_nil){
+          elsec = BiwaScheme.undef;
+        }
+        ret = [
+          BiwaScheme.Sym("if"), 
+          this.expand(testc, flag), 
+          this.expand(thenc, flag),
+          this.expand(elsec, flag)
+        ].to_list();
+        break;
+      case BiwaScheme.Sym("set!"):
+        var v=x.second(), x=x.third();
+        ret = [BiwaScheme.Sym("set!"), v, this.expand(x, flag)].to_list();
+        break;
+      case BiwaScheme.Sym("call-with-current-continuation"): 
+      case BiwaScheme.Sym("call/cc"): 
+        var x=x.second();
+        ret = [BiwaScheme.Sym("call/cc"), this.expand(x, flag)].to_list();
+        break;
+      default: //apply
+        // if x is a macro call ...
+        if(x.car instanceof BiwaScheme.Symbol &&
+            BiwaScheme.TopEnv[x.car.name] instanceof BiwaScheme.Syntax){
+          var transformer = BiwaScheme.TopEnv[x.car.name];
+          flag["modified"] = true;
+          ret = transformer.transform(x);
+
+          if(BiwaScheme.Debug){
+            var before = BiwaScheme.to_write(x);
+            var after = BiwaScheme.to_write(ret);
+            if(before != after) puts("expand: " + before + " => " + after)
+          }
+
+          var fl;
+          for(;;){
+            ret = this.expand(ret, fl={});
+            if(!fl["modified"]) 
+              break;
+          }
+        }
+        else if(x == BiwaScheme.nil)
+          ret = BiwaScheme.nil;
+        else{
+          ret = new BiwaScheme.Pair(this.expand(x.car, flag), x.cdr.to_array().map(function(item){return this.expand(item, flag)}.bind(this)).to_list());
+        }
+      }
+    }
+    else{
+      ret = x;
+    }
+    return ret;
+  },
+
   //x: Symbol
   //e: env [set of locals, set of frees]
   //ret: opc
@@ -400,11 +480,7 @@ BiwaScheme.Compiler = Class.create({
 //      else
 //        return ret;
   },
-  run: function(expr){
+  runCompiler: function(expr){
     return this.compile(expr, [new BiwaScheme.Set(), new BiwaScheme.Set()], new BiwaScheme.Set(), new BiwaScheme.Set(), ["halt"]);
   }
 });
-BiwaScheme.Compiler.compile = function(expr, next){
-  expr = (new BiwaScheme.Interpreter).expand(expr);
-  return (new BiwaScheme.Compiler).run(expr, next);
-};

@@ -1,12 +1,17 @@
 ///
 /// Interpreter
 ///
-
+var Console = {};
 BiwaScheme.Interpreter = Class.create({
-  initialize: function(on_error){
+  initialize: function(ports){
     this.stack = [] //(make-vector 1000)
-    this.on_error = on_error || function(e){};
+    BiwaScheme.Port.current_output = new BiwaScheme.Port(true, false);
+    BiwaScheme.Port.current_output.put_string = function(str) { ports.stdout(str); };
+    BiwaScheme.Port.current_error = BiwaScheme.Port.current_output;   
+
+    Console.puts = ports.stdout;
     this.after_evaluate = Prototype.emptyFunction;
+    this.compiler = new BiwaScheme.Compiler();
   },
 
   inspect: function(){
@@ -91,13 +96,20 @@ BiwaScheme.Interpreter = Class.create({
   },
 
   execute: function(a, x, f, c, s){
+      f = f || 0;
+      c = c || [];
+      s = s || 0;
     var ret = null;
     try{
       ret = this._execute(a, x, f, c, s);
     }
     catch(e){
       var state = {a:a, x:x, f:f, c:c, s:s, stack:this.stack};
-      return this.on_error(e, state);
+      console.log("Error e:");
+      console.log(e);
+      console.log("Error state:");
+      console.log(state);
+      return BiwaScheme.Port.current_error.put_string(e.message);
     }
     return ret;
   },
@@ -351,89 +363,8 @@ BiwaScheme.Interpreter = Class.create({
     return a
   },
 
-  // expand macro forms (recursively)
-  expand: function(x, flag){
-    flag || (flag = {})
-    var ret = null;
-    if(x instanceof BiwaScheme.Symbol){
-      ret = x;
-    }
-    else if(x instanceof BiwaScheme.Pair){
-      switch(x.car){
-      case BiwaScheme.Sym("define"):
-        var left = x.cdr.car, exp = x.cdr.cdr;
-        ret = new BiwaScheme.Pair(BiwaScheme.Sym("define"),
-                new BiwaScheme.Pair(left, this.expand(exp, flag)));
-        break;
-      case BiwaScheme.Sym("begin"):
-        ret = new BiwaScheme.Pair(BiwaScheme.Sym("begin"), this.expand(x.cdr, flag));
-        break;
-      case BiwaScheme.Sym("quote"):
-        ret = x;
-        break;
-      case BiwaScheme.Sym("lambda"):
-        var vars=x.cdr.car, body=x.cdr.cdr;
-        ret = new BiwaScheme.Pair(BiwaScheme.Sym("lambda"),
-                new BiwaScheme.Pair(vars, this.expand(body, flag)));
-        break;
-      case BiwaScheme.Sym("if"):
-        var testc=x.second(), thenc=x.third(), elsec=x.fourth();
-        if (elsec == BiwaScheme.inner_of_nil){
-          elsec = BiwaScheme.undef;
-        }
-        ret = [
-          BiwaScheme.Sym("if"), 
-          this.expand(testc, flag), 
-          this.expand(thenc, flag),
-          this.expand(elsec, flag)
-        ].to_list();
-        break;
-      case BiwaScheme.Sym("set!"):
-        var v=x.second(), x=x.third();
-        ret = [BiwaScheme.Sym("set!"), v, this.expand(x, flag)].to_list();
-        break;
-      case BiwaScheme.Sym("call-with-current-continuation"): 
-      case BiwaScheme.Sym("call/cc"): 
-        var x=x.second();
-        ret = [BiwaScheme.Sym("call/cc"), this.expand(x, flag)].to_list();
-        break;
-      default: //apply
-        // if x is a macro call ...
-        if(x.car instanceof BiwaScheme.Symbol &&
-            BiwaScheme.TopEnv[x.car.name] instanceof BiwaScheme.Syntax){
-          var transformer = BiwaScheme.TopEnv[x.car.name];
-          flag["modified"] = true;
-          ret = transformer.transform(x);
-
-          if(BiwaScheme.Debug){
-            var before = BiwaScheme.to_write(x);
-            var after = BiwaScheme.to_write(ret);
-            if(before != after) puts("expand: " + before + " => " + after)
-          }
-
-          var fl;
-          for(;;){
-            ret = this.expand(ret, fl={});
-            if(!fl["modified"]) 
-              break;
-          }
-        }
-        else if(x == BiwaScheme.nil)
-          ret = BiwaScheme.nil;
-        else{
-          ret = new BiwaScheme.Pair(this.expand(x.car, flag), x.cdr.to_array().map(function(item){return this.expand(item, flag)}.bind(this)).to_list());
-        }
-      }
-    }
-    else{
-      ret = x;
-    }
-    return ret;
-  },
-
   evaluate: function(str, after_evaluate){
     this.parser = new BiwaScheme.Parser(str);
-    this.compiler = new BiwaScheme.Compiler();
     if(after_evaluate) 
       this.after_evaluate = after_evaluate;
 
@@ -458,11 +389,10 @@ BiwaScheme.Interpreter = Class.create({
         if(expr === BiwaScheme.Parser.EOS) break;
 
         // expand
-        expr = this.expand(expr);
+        //expr = this.expand(expr);
 
         // compile
-        var opc = this.compiler.run(expr);
-        //if(BiwaScheme.Debug) p(opc);
+        var opc = this.compiler.runCompiler(expr);
 
         // execute
         ret = this.execute(expr, opc, 0, [], 0);
@@ -492,7 +422,7 @@ BiwaScheme.Interpreter = Class.create({
   // only compiling (for debug use only)
   compile: function(str){
     var obj = BiwaScheme.Interpreter.read(str);
-    var opc = BiwaScheme.Compiler.compile(obj);
+    var opc = this.compiler.runCompiler(obj);
     return opc;
   }
 });

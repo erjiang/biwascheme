@@ -23,10 +23,10 @@ BiwaScheme.nil = {
 };
 
 //
-// #<undef> (The undefined value)
+// #<void> (The "nothing" value)
 //
 BiwaScheme.undef = new Object();
-BiwaScheme.undef.toString = function(){ return "#<undef>"; }
+BiwaScheme.undef.toString = function(){ return "#<void>"; }
 
 // (eof-object)
 BiwaScheme.eof = new Object;

@@ -2056,6 +2056,11 @@ if( typeof(BiwaScheme)!='object' ) BiwaScheme={}; with(BiwaScheme) {
   });
   define_libfunc("display", 1, 2, function(ar){
     var port = ar[1] || Port.current_output;
+    if(typeof(port.inspect) === "undefined" ||
+        port.inspect() !== "#<Port>") {
+            throw new BiwaScheme.Error(BiwaScheme.to_write(port) +
+                " is not a Port");
+    }
     port.put_string(to_display(ar[0]));
     return BiwaScheme.undef;
   });
