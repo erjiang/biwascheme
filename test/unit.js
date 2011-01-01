@@ -465,6 +465,7 @@ describe('11.5 Equivalence predicates', {
     ev("(eqv? (cons 1 2) (cons 1 2))").should_be(false)
     ev("(eqv? (lambda () 1) (lambda () 2))").should_be(false);
     ev("(eqv? #f 'nil)").should_be(false);
+    ev('(eqv? "eric" "eric")').should_be(false);
   },
   'eq?' : function(){
     ev("(eq? 'a 'a)").should_be(true);
@@ -472,6 +473,8 @@ describe('11.5 Equivalence predicates', {
     ev("(eq? '() '())").should_be(true);
     ev("(eq? car car)").should_be(true);
     ev("(let ((x '(a))) (eq? x x))").should_be(true)
+    // strings are heap objects
+    ev('(eq? "eric" "eric")').should_be(false);
   },
   'equal?' : function(){
     ev("(equal? 'a 'a)").should_be(true);
