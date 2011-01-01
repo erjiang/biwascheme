@@ -14,6 +14,10 @@ BiwaScheme.isChar = function(obj){
   return (obj instanceof BiwaScheme.Char);
 };
 
+BiwaScheme.isString = function(obj){
+  return (obj instanceof BiwaScheme.String);
+};
+
 BiwaScheme.isSymbol = function(obj){
   return (obj instanceof BiwaScheme.Symbol);
 };

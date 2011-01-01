@@ -110,7 +110,7 @@ var assert_between = make_assert(function(fname, obj, from, to){
   }
 });
 
-var assert_string = make_simple_assert("string", Object.isString);
+var assert_string = make_simple_assert("string", BiwaScheme.isString);
 
 var assert_char = make_simple_assert("character", BiwaScheme.isChar);
 var assert_symbol = make_simple_assert("symbol", BiwaScheme.isSymbol);

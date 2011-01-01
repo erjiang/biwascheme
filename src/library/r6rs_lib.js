@@ -735,7 +735,8 @@ if( typeof(BiwaScheme)!='object' ) BiwaScheme={}; with(BiwaScheme) {
     return z.toString(radix);
   })
   define_libfunc("string->number", 1, 3, function(ar){
-    var s = ar[0], radix = ar[1] || 10;
+    assert_string(ar[0])
+    var s = ar[0].value, radix = ar[1] || 10;
     switch(s){
       case "+inf.0": return Infinity;
       case "-inf.0": return -Infinity;
@@ -934,7 +935,7 @@ if( typeof(BiwaScheme)!='object' ) BiwaScheme={}; with(BiwaScheme) {
   });
   define_libfunc("symbol->string", 1, 1, function(ar){
     assert_symbol(ar[0]);
-    return ar[0].name;
+    return new BiwaScheme.String(ar[0].name);
   });
   define_libfunc("symbol=?", 2, null, function(ar){
     assert_symbol(ar[0]);
@@ -946,7 +947,7 @@ if( typeof(BiwaScheme)!='object' ) BiwaScheme={}; with(BiwaScheme) {
   });
   define_libfunc("string->symbol", 1, 1, function(ar){
     assert_string(ar[0]);
-    return Sym(ar[0]);
+    return Sym(ar[0].value);
   });
 
   //
@@ -990,7 +991,7 @@ if( typeof(BiwaScheme)!='object' ) BiwaScheme={}; with(BiwaScheme) {
   //        11.12  Strings
   //
   define_libfunc("string?", 1, 1, function(ar){
-    return (typeof(ar[0]) == "string"); 
+    return ar[0] instanceof BiwaScheme.String;
   })
   define_libfunc("make-string", 1, 2, function(ar){
     assert_integer(ar[0]);
@@ -999,27 +1000,26 @@ if( typeof(BiwaScheme)!='object' ) BiwaScheme={}; with(BiwaScheme) {
       assert_char(ar[1]);
       c = ar[1].value;
     }
-    return c.times(ar[0]);
+    return new BiwaScheme.String(c.times(ar[0]));
   })
   define_libfunc("string", 1, null, function(ar){
     for(var i=0; i<ar.length; i++)
       assert_char(ar[i]);
-    return ar.map(function(c){ return c.value }).join("");
+    return new BiwaScheme.String(ar.map(function(c){ return c.value }).join(""));
   })
   define_libfunc("string-length", 1, 1, function(ar){
     assert_string(ar[0]);
-    return ar[0].length;
+    return ar[0].length();
   })
   define_libfunc("string-ref", 2, 2, function(ar){
     assert_string(ar[0]);
-    assert_between(ar[1], 0, ar[0].length-1);
-    return Char.get(ar[0].charAt([ar[1]]));
+    return Char.get(ar[0].ref(ar[1]));
   })
   define_libfunc("string=?", 2, null, function(ar){
     assert_string(ar[0]);
     for(var i=1; i<ar.length; i++){
       assert_string(ar[i]);
-      if(ar[0] != ar[i]) return false;
+      if(ar[0].value != ar[i].value) return false;
     }
     return true;
   })
@@ -1027,7 +1027,7 @@ if( typeof(BiwaScheme)!='object' ) BiwaScheme={}; with(BiwaScheme) {
     assert_string(ar[0]);
     for(var i=1; i<ar.length; i++){
       assert_string(ar[i]);
-      if(!(ar[i-1] < ar[i])) return false;
+      if(!(ar[i-1].value < ar[i].value)) return false;
     }
     return true;
   })
@@ -1035,7 +1035,7 @@ if( typeof(BiwaScheme)!='object' ) BiwaScheme={}; with(BiwaScheme) {
     assert_string(ar[0]);
     for(var i=1; i<ar.length; i++){
       assert_string(ar[i]);
-      if(!(ar[i-1] > ar[i])) return false;
+      if(!(ar[i-1].value > ar[i].value)) return false;
     }
     return true;
   })
@@ -1043,7 +1043,7 @@ if( typeof(BiwaScheme)!='object' ) BiwaScheme={}; with(BiwaScheme) {
     assert_string(ar[0]);
     for(var i=1; i<ar.length; i++){
       assert_string(ar[i]);
-      if(!(ar[i-1] <= ar[i])) return false;
+      if(!(ar[i-1].value <= ar[i].value)) return false;
     }
     return true;
   })
@@ -1051,7 +1051,7 @@ if( typeof(BiwaScheme)!='object' ) BiwaScheme={}; with(BiwaScheme) {
     assert_string(ar[0]);
     for(var i=1; i<ar.length; i++){
       assert_string(ar[i]);
-      if(!(ar[i-1] >= ar[i])) return false;
+      if(!(ar[i-1].value >= ar[i].value)) return false;
     }
     return true;
   })
@@ -1063,42 +1063,46 @@ if( typeof(BiwaScheme)!='object' ) BiwaScheme={}; with(BiwaScheme) {
 
     if(ar[1] < 0) throw new Error("substring: start too small: "+ar[1]);
     if(ar[2] < 0) throw new Error("substring: end too small: "+ar[2]);
-    if(ar[0].length+1 <= ar[1]) throw new Error("substring: start too big: "+ar[1]);
-    if(ar[0].length+1 <= ar[2]) throw new Error("substring: end too big: "+ar[2]);
+    if(ar[0].value.length+1 <= ar[1]) throw new Error("substring: start too big: "+ar[1]);
+    if(ar[0].value.length+1 <= ar[2]) throw new Error("substring: end too big: "+ar[2]);
     if(!(ar[1] <= ar[2])) throw new Error("substring: not start <= end: "+ar[1]+", "+ar[2]);
     
-    return ar[0].substring(ar[1], ar[2]);
+    return new BiwaScheme.String(ar[0].substring(ar[1], ar[2]));
   })
 
   define_libfunc("string-append", 0, null, function(ar){
     for(var i=0; i<ar.length; i++)
       assert_string(ar[i]);
     
-    return ar.join("");
+    return new BiwaScheme.String(ar.join(""));
   })
   define_libfunc("string->list", 1, 1, function(ar){
     assert_string(ar[0]);
     var chars = [];
-    ar[0].scan(/./, function(s){ chars.push(Char.get(s[0])) });
+    ar[0].value.scan(/./, function(s){ chars.push(Char.get(s[0])) });
     return chars.to_list();
   })
   define_libfunc("list->string", 1, 1, function(ar){
     assert_list(ar[0]);
-    return ar[0].to_array().map(function(c){ return c.value; }).join("");
+    return new BiwaScheme.String(ar[0].to_array().map(function(c){ return c.value; }).join(""));
   })
   define_libfunc("string-for-each", 2, null, function(ar){
     var proc = ar.shift(), strs = ar;
     strs.each(function(str){ assert_string(str) });
+    var strvs = [];
+    var i = strs.length;
+    while(i--)
+        strvs[i] = strs[i].value;
     
-    return Call.multi_foreach(strs, {
+    return Call.multi_foreach(strvs, {
       call: function(chars){ return new Call(proc, chars); },
       finish: function(){ return BiwaScheme.undef; }
     })
   })
   define_libfunc("string-copy", 1, 1, function(ar){
-    // note: this is useless, because javascript strings are immutable
+    // note: not useless anymore!
     assert_string(ar[0]);
-    return ar[0];
+    return new BiwaScheme.String(ar[0].value);
   })
 
 
@@ -1361,12 +1365,12 @@ if( typeof(BiwaScheme)!='object' ) BiwaScheme={}; with(BiwaScheme) {
   //(string-upcase string)    procedure 
   define_libfunc("string-upcase", 1, 1, function(ar){
     assert_string(ar[0]);
-    return ar[0].toUpperCase();
+    return new BiwaScheme.String(ar[0].value.toUpperCase());
   });
   //(string-downcase string)    procedure 
   define_libfunc("string-downcase", 1, 1, function(ar){
     assert_string(ar[0]);
-    return ar[0].toLowerCase();
+    return new BiwaScheme.String(ar[0].value.toLowerCase());
   });
 //(string-titlecase string)    procedure 
 //(string-foldcase string)    procedure
@@ -1374,11 +1378,11 @@ if( typeof(BiwaScheme)!='object' ) BiwaScheme={}; with(BiwaScheme) {
   BiwaScheme.make_string_ci_function = function(compare){
     return function(ar){
       assert_string(ar[0]);
-      var str = ar[0].toUpperCase();
+      var str = ar[0].value.toUpperCase();
 
       for(var i=1; i<ar.length; i++){
         assert_string(ar[i]);
-        if (!compare(str, ar[i].toUpperCase()))
+        if (!compare(str, ar[i].value.toUpperCase()))
           return false;
       }
       return true;

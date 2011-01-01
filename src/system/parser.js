@@ -168,9 +168,9 @@
         } else if( /^#\\.$/.test(t) ) {
           return BiwaScheme.Char.get( t.charAt(2) );
         } else if( /^\"(\\(.|$)|[^\"\\])*\"?$/.test(t) ) {
-          return t.replace(/(\r?\n|\\n)/g, "\n").replace( /^\"|\\(.|$)|\"$/g, function($0,$1) {
+          return new BiwaScheme.String(t.replace(/(\r?\n|\\n)/g, "\n").replace( /^\"|\\(.|$)|\"$/g, function($0,$1) {
             return $1 ? $1 : '';
-          } );
+          } ));
         } else return BiwaScheme.Sym(t);  // 2Do: validate !!
       }
     }
