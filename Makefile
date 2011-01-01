@@ -12,6 +12,7 @@ FILES0 = \
   src/system/value.js \
   src/system/symbol.js \
   src/system/char.js \
+  src/system/string.js \
   src/system/number.js \
   src/system/port.js \
   src/system/record.js \
@@ -41,6 +42,7 @@ CONSOLE_FILES0 =					\
   src/system/value.js				\
   src/system/symbol.js				\
   src/system/char.js				\
+  src/system/string.js				\
   src/system/number.js				\
   src/system/port.js				\
   src/system/hashtable.js			\
